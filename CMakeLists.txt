@@ -12,3 +12,4 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 endif()
 
 add_executable(data_generator data_generator.cpp)
+add_executable(unique_words_counter unique_words_counter.cpp)

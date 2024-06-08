@@ -5,40 +5,51 @@
 #include <sstream>
 #include <random>
 #include <unordered_set>
+#include <vector>
 
 // https://stackoverflow.com/questions/440133/how-do-i-create-a-random-alpha-numeric-string-in-c
 template <typename T = std::mt19937>
 auto random_generator() -> T {
-    // auto constexpr seed_bytes = sizeof(typename T::result_type) * T::state_size;
-    // auto constexpr seed_len = seed_bytes / sizeof(std::seed_seq::result_type);
-    // auto seed = std::array<std::seed_seq::result_type, seed_len>();
-
-    // auto dev = std::random_device();
-    // constexpr auto seed_len = 1;
-    // auto seed = std::array<std::seed_seq::result_type, seed_len>();
-    // std::generate_n(begin(seed), seed_len, std::ref(dev));
     auto seed_seq = std::seed_seq{42};
     return T{seed_seq};
 }
 
-auto generate_random_string(std::size_t len) -> std::string {
+auto generate_random_string(int max_string_length) -> std::string {
     static constexpr auto chars = "abcdefghijklmnopqrstuvwxyz";
     thread_local auto rng = random_generator<>();
     auto dist = std::uniform_int_distribution{{}, std::strlen(chars) - 1};
 
-    auto len_dist = std::uniform_int_distribution<>{1, static_cast<int>(len)};
+    auto len_dist = std::uniform_int_distribution<>{1, max_string_length};
     auto str_length = len_dist(rng);
     auto result = std::string(str_length, '\0');
 
-    std::generate_n(std::begin(result), len, [&]() { return chars[dist(rng)]; });
+    std::generate_n(std::begin(result), str_length, [&]() { return chars[dist(rng)]; });
     return result;
 }
 
+int generate_random_int(int low, int high)
+{
+    thread_local auto rng = random_generator<>();
+    auto dist = std::uniform_int_distribution{low, high};
+
+    return dist(rng);
+}
 
 int main(int argc, char const *argv[])
 {
-    const std::size_t max_string_length = 10;
-    const std::size_t file_size_in_bytes = 1000;
+    const std::size_t max_string_length = 100;
+    const std::size_t file_size_in_bytes = 100'000'000;
+    const std::size_t max_unique_words_count = 10000;
+
+    std::unordered_set<std::string> generated_unique_words;
+
+    while(generated_unique_words.size() < max_unique_words_count)
+    {
+        const auto str = generate_random_string(max_string_length);
+        generated_unique_words.insert(str);
+    }
+
+    std::vector<std::string> generated_unique_words_vec{generated_unique_words.begin(), generated_unique_words.end()};
 
     std::unordered_set<std::string> unique_words;
 
@@ -48,14 +59,19 @@ int main(int argc, char const *argv[])
 
     while (total_size < file_size_in_bytes)
     {
-        auto str = generate_random_string(max_string_length);
-        unique_words.insert(str);
-
+        auto random_index = generate_random_int(0, generated_unique_words_vec.size() - 1);
+        auto str = generated_unique_words_vec[random_index];
         str.push_back(' ');
+
+        // check for last word length to be within file size limit
         std::int64_t diff = file_size_in_bytes - total_size - str.size();
         if (diff < 0) {
+            // replace last word by spaces to the end of file
             str = std::string(file_size_in_bytes - total_size, ' ');
+        } else {
+            unique_words.insert(str);
         }
+        
         total_size += str.size();
         file << str;
     }    
