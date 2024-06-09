@@ -13,3 +13,4 @@ endif()
 
 add_executable(data_generator data_generator.cpp)
 add_executable(unique_words_counter unique_words_counter.cpp)
+target_link_libraries(unique_words_counter /opt/homebrew/lib/libprofiler.dylib)

@@ -1,4 +1,4 @@
-with open('build/file_10000.txt', 'r') as f:
+with open('build/file_100000.txt', 'r') as f:
     txt = f.read()
     words = txt.split()
 
