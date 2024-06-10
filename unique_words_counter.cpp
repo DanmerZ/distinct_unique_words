@@ -28,36 +28,36 @@ private:
     std::unordered_set<std::string> set_;
 };
 
-template<typename Stream>
-std::vector<int> find_block_offsets([[maybe_unused]]const Stream& stream, [[maybe_unused]]const std::size_t block_size)
+std::vector<int> find_block_offsets(const char* file_name, const std::size_t block_size, const std::uintmax_t file_size)
 {
-    std::stringstream ss;
-    ss << "a dog and a man a dog and a mana dog and a mana dog and a mana dog and a man";
+    // std::stringstream ss;
+    // ss << "a dog and a man a dog and a mana dog and a mana dog and a mana dog and a man";
 
-    int seek = 5;
+    std::ifstream ifs(file_name);
+
+    auto seek = block_size;
     std::vector<int> v;
     v.push_back(0);
     std::string word;
 
-    ss.seekg(0);
+    ifs.seekg(0);
 
-    while (ss.good())
+    while (ifs.good())
     {
-        ss.seekg(seek, std::ios::cur);
-        ss >> word;
-        auto cur = ss.tellg();
+        ifs.seekg(seek, std::ios::cur);
+        ifs >> word;
+        auto cur = ifs.tellg();
         if (cur > 0) 
         {
-            v.push_back(ss.tellg());
+            v.push_back(cur);
         } 
-        else 
+        
+        if (file_size - cur < block_size)
         {
-            ss.seekg(-1, std::ios::end);
-            v.push_back(ss.tellg());
+            v.push_back(file_size - 1);
+            break;
         }
-
-        std::cout << ss.peek();
-    }
+    }    
 
     return v;
 }
@@ -123,7 +123,10 @@ int main(int argc, char const *argv[])
         std::cerr << "Could not find a file " << file_name << std::endl;
         return -1;
     }
-    find_block_offsets(1, 10);
+
+    const auto file_size = std::filesystem::file_size(file_name);
+
+    find_block_offsets(file_name, 10, file_size);
     trivial_solution(file_name);
     // trivial_solution_ranges(file_name);
     // buffer_io_solution(file_name);
