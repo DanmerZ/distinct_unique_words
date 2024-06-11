@@ -38,8 +38,8 @@ int generate_random_int(int low, int high)
 int main([[maybe_unused]]int argc, [[maybe_unused]]char const *argv[])
 {
     const std::size_t max_string_length = 100;
-    const std::size_t file_size_in_bytes = 500'000'000;
-    const std::size_t max_unique_words_count = 100'000;
+    const std::size_t file_size_in_bytes = 32'000'000'000;
+    const std::size_t max_unique_words_count = 2'000'000;
 
     std::unordered_set<std::string> generated_unique_words;
 

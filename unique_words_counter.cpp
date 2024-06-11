@@ -77,7 +77,7 @@ void trivial_solution(const char* file_name)
 }
 
 template<typename ThreadSafeHashSet>
-void process_block(std::string&& buffer, ThreadSafeHashSet& safe_set)
+void process_block(std::string buffer, ThreadSafeHashSet& safe_set)
 {
     std::stringstream ifs(buffer);
     std::string word;
@@ -116,7 +116,7 @@ void block_async_solution(const char* file_name)
 {
     const auto file_size = std::filesystem::file_size(file_name);
     const auto num_threads = std::thread::hardware_concurrency();
-    const auto block_size = file_size / num_threads / 10;
+    const auto block_size = file_size / num_threads / 30;
 
     const auto block_indices = find_block_offsets(file_name, block_size, file_size);
 
@@ -131,10 +131,11 @@ void block_async_solution(const char* file_name)
     std::mutex mut;
     std::condition_variable cv;
 
+    std::ifstream ifs(file_name);
+
     for (auto i = 0; i < block_indices.size() - 1; i++)
     {
         const auto buffer_size = block_indices[i + 1] - block_indices[i];
-        std::cout << current_buffer_size << std::endl;
         
         {
             std::unique_lock<std::mutex> lk(mut);
@@ -145,10 +146,7 @@ void block_async_solution(const char* file_name)
 
         std::string buffer(buffer_size, '\0');
         current_buffer_size += static_cast<std::intmax_t>(buffer_size);
-
-        std::ifstream ifs(file_name);
-        ifs.seekg(block_indices[i]);
-
+        
         if (ifs.read(&buffer[0], buffer_size))
         {
             futures.push_back(
@@ -179,7 +177,7 @@ int main([[maybe_unused]]int argc, char const *argv[])
         return -1;
     }
 
-    // trivial_solution(file_name);
+    //trivial_solution(file_name);
     //block_solution(file_name);
     block_async_solution(file_name);
     return 0;
