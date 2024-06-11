@@ -1,3 +1,5 @@
+#include <atomic>
+#include <condition_variable>
 #include <iostream>
 #include <fstream>
 #include <filesystem>
@@ -7,8 +9,7 @@
 #include <thread>
 #include <future>
 
-#include <ranges>
-#include <string_view>
+#include <boost/unordered/concurrent_flat_set.hpp>
 
 class ThreadSafeSet
 {
@@ -19,7 +20,7 @@ public:
         set_.insert(s);
     }
 
-    std::size_t count() const
+    std::size_t size() const
     {
         std::lock_guard<std::mutex> lk(m_);
         return set_.size();
@@ -75,21 +76,14 @@ void trivial_solution(const char* file_name)
     std::cout << unique_words.size() - 1 << std::endl;
 }
 
-void process_block(const char* file_name, std::uintmax_t start, std::uintmax_t end, ThreadSafeSet& safe_set)
+template<typename ThreadSafeHashSet>
+void process_block(std::string&& buffer, ThreadSafeHashSet& safe_set)
 {
-    std::ifstream ifs(file_name);
-
-    ifs.seekg(start);
-
+    std::stringstream ifs(buffer);
     std::string word;
     while (std::getline(ifs, word, ' '))
     {
-        safe_set.insert(word);
-
-        if (ifs.tellg() > end)
-        {
-            break;
-        }
+        safe_set.insert(word);        
     }
 }
 
@@ -103,30 +97,69 @@ void block_solution(const char* file_name)
 
     ThreadSafeSet safe_set;
 
+    std::ifstream ifs(file_name);
+
     for (auto i = 0; i < block_indices.size() - 1; i++)
     {
-        process_block(file_name, block_indices[i], block_indices[i + 1], safe_set);
+        const auto buffer_size = block_indices[i + 1] - block_indices[i];
+        std::string buffer(buffer_size, '\0');
+        if (ifs.read(&buffer[0], buffer_size))
+        {
+            process_block(std::move(buffer), safe_set);
+        }        
     }
 
-    std::cout << safe_set.count() - 1 << std::endl;
+    std::cout << safe_set.size() - 1 << std::endl;
 }
 
 void block_async_solution(const char* file_name)
 {
     const auto file_size = std::filesystem::file_size(file_name);
     const auto num_threads = std::thread::hardware_concurrency();
-    const auto block_size = file_size / num_threads;
+    const auto block_size = file_size / num_threads / 10;
 
     const auto block_indices = find_block_offsets(file_name, block_size, file_size);
 
-    ThreadSafeSet safe_set;
+    const auto buffer_size_limit = 0.1 * file_size;
+
+    //ThreadSafeSet safe_set;
+    boost::concurrent_flat_set<std::string> safe_set;    
 
     std::vector<std::future<void>> futures;
 
+    std::atomic_intmax_t current_buffer_size = 0;
+    std::mutex mut;
+    std::condition_variable cv;
+
     for (auto i = 0; i < block_indices.size() - 1; i++)
     {
-        futures.push_back(
-            std::async(std::launch::async, process_block, file_name, block_indices[i], block_indices[i + 1], std::ref(safe_set)));
+        const auto buffer_size = block_indices[i + 1] - block_indices[i];
+        std::cout << current_buffer_size << std::endl;
+        
+        {
+            std::unique_lock<std::mutex> lk(mut);
+            cv.wait(lk, [&buffer_size, &current_buffer_size, &buffer_size_limit]() {
+                return current_buffer_size + buffer_size < buffer_size_limit;
+                });
+        }
+
+        std::string buffer(buffer_size, '\0');
+        current_buffer_size += static_cast<std::intmax_t>(buffer_size);
+
+        std::ifstream ifs(file_name);
+        ifs.seekg(block_indices[i]);
+
+        if (ifs.read(&buffer[0], buffer_size))
+        {
+            futures.push_back(
+                std::async(std::launch::async, [buf=std::move(buffer), &safe_set, &current_buffer_size, &cv] () mutable {
+                    const auto buf_size = buf.size();
+                    process_block(std::move(buf), safe_set);
+                    current_buffer_size -= buf_size;
+                    cv.notify_one();
+                })
+            );
+        }
     }
 
     for (auto& future: futures)
@@ -134,46 +167,7 @@ void block_async_solution(const char* file_name)
         future.get();
     }
 
-    std::cout << safe_set.count() - 1 << std::endl;
-}
-
-void trivial_solution_ranges(const char* file_name)
-{
-    std::ifstream ifs(file_name);
-    std::string the_whole_text(std::istreambuf_iterator<char>{ifs}, {});
-
-    auto view = the_whole_text | std::views::split(' ') |
-        std::views::transform([](auto &&r) {
-            return std::string_view(r.begin(), r.end());
-        });
-
-    std::unordered_set<std::string> unique_words;
-
-    for (const auto word : view) {
-        if (!word.empty() && word[0] != ' ') {
-            unique_words.insert(std::string(word));
-        }
-    }
-
-    std::cout << unique_words.size() << std::endl;
-}
-
-void buffer_io_solution(const char* file_name)
-{
-    std::ifstream ifs(file_name);
-    ThreadSafeSet unique_words;
-
-    const std::size_t buffer_size = 100;
-    std::string buffer{buffer_size, '\0'};
-
-    ifs.seekg(0);
-
-    while (ifs.read(&buffer[0], buffer_size))
-    {
-        std::cout << buffer << std::endl;
-        std::cout << buffer.size() << std::endl;
-    }
-
+    std::cout << safe_set.size() - 1 << std::endl;
 }
 
 int main([[maybe_unused]]int argc, char const *argv[])
@@ -186,8 +180,7 @@ int main([[maybe_unused]]int argc, char const *argv[])
     }
 
     // trivial_solution(file_name);
-    // trivial_solution_ranges(file_name);
-    // buffer_io_solution(file_name);
+    //block_solution(file_name);
     block_async_solution(file_name);
     return 0;
 }
