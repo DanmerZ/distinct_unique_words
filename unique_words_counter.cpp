@@ -209,37 +209,6 @@ private:
     std::condition_variable cv_;
 };
 
-std::vector<std::uintmax_t> find_block_offsets(const char* file_name, const std::size_t block_size, const std::uintmax_t file_size)
-{
-    std::ifstream ifs(file_name);
-
-    auto seek = block_size;
-    std::vector<std::uintmax_t> v;
-    v.push_back(0);
-    std::string word;
-
-    ifs.seekg(0);
-
-    while (ifs.good())
-    {
-        ifs.seekg(seek, std::ios::cur);
-        ifs >> word;
-        auto cur = ifs.tellg();
-        if (cur > 0)
-        {
-            v.push_back(cur);
-        }
-
-        if (file_size - cur < block_size)
-        {
-            v.push_back(file_size - 1);
-            break;
-        }
-    }
-
-    return v;
-}
-
 void trivial_solution(const char* file_name)
 {
     std::ifstream ifs(file_name);
@@ -254,112 +223,6 @@ void trivial_solution(const char* file_name)
     std::cout << unique_words.size() - 1 << std::endl;
 }
 
-template<typename ThreadSafeHashSet>
-void process_block(std::string buffer, ThreadSafeHashSet& safe_set)
-{
-    std::stringstream ifs(buffer);
-    std::string word;
-    while (std::getline(ifs, word, ' '))
-    {
-        safe_set.insert(word);        
-    }
-}
-
-void block_solution(const char* file_name)
-{
-    const auto file_size = std::filesystem::file_size(file_name);
-    const auto num_threads = std::thread::hardware_concurrency();
-    const auto block_size = file_size / num_threads;
-
-    const auto block_indices = find_block_offsets(file_name, block_size, file_size);
-
-    ThreadSafeSet safe_set;
-
-    std::ifstream ifs(file_name);
-
-    for (auto i = 0; i < block_indices.size() - 1; i++)
-    {
-        const auto buffer_size = block_indices[i + 1] - block_indices[i];
-        std::string buffer(buffer_size, '\0');
-        if (ifs.read(&buffer[0], buffer_size))
-        {
-            process_block(std::move(buffer), safe_set);
-        }        
-    }
-
-    std::cout << safe_set.size() - 1 << std::endl;
-}
-
-void block_async_solution(const char* file_name)
-{
-    const auto file_size = std::filesystem::file_size(file_name);
-    const auto num_threads = std::thread::hardware_concurrency();
-    const auto block_size = file_size / num_threads / 30;
-
-    const auto block_indices = find_block_offsets(file_name, block_size, file_size);
-
-    const auto buffer_size_limit = 0.1 * file_size;
-
-    //ThreadSafeSet safe_set;
-    boost::concurrent_flat_set<std::string> safe_set;    
-
-    //std::vector<std::future<void>> futures;
-
-    std::atomic_intmax_t current_buffer_size = 0;
-    std::mutex mut;
-    std::condition_variable cv;
-
-    std::ifstream ifs(file_name);
-
-    ThreadPool tp;
-    tp.start();
-
-    for (auto i = 0; i < block_indices.size() - 1; i++)
-    {
-        const auto buffer_size = block_indices[i + 1] - block_indices[i];
-        
-        {
-            std::unique_lock<std::mutex> lk(mut);
-            cv.wait(lk, [&buffer_size, &current_buffer_size, &buffer_size_limit]() {
-                return current_buffer_size + buffer_size < buffer_size_limit;
-                });
-        }
-
-        std::string buffer(buffer_size, '\0');
-        current_buffer_size += static_cast<std::intmax_t>(buffer_size);
-        
-        if (ifs.read(&buffer[0], buffer_size))
-        {
-            //futures.push_back(
-            //    std::async(std::launch::async, [buf=std::move(buffer), &safe_set, &current_buffer_size, &cv] () mutable {
-            //        const auto buf_size = buf.size();
-            //        process_block(std::move(buf), safe_set);
-            //        current_buffer_size -= buf_size;
-            //        cv.notify_one();
-            //    })
-            //);
-
-            tp.enqueue_job(
-                [buf = std::move(buffer), &safe_set, &current_buffer_size, &cv]() mutable {
-                    const auto buf_size = buf.size();
-                    process_block(std::move(buf), safe_set);
-                    current_buffer_size -= buf_size;
-                    cv.notify_one();
-                }
-            );
-        }
-    }
-
-    tp.stop();
-
-    //for (auto& future: futures)
-    //{
-    //    future.get();
-    //}
-
-    std::cout << safe_set.size() - 1 << std::endl;
-}
-
 int main([[maybe_unused]]int argc, char const *argv[])
 {
     const char* file_name = argv[1];
@@ -370,10 +233,12 @@ int main([[maybe_unused]]int argc, char const *argv[])
     }
 
     //trivial_solution(file_name);
-    //block_solution(file_name);
-    //block_async_solution(file_name);
 
-    UniqueWordsCounter uwc(file_name, 1'000'000'000);
+    const auto file_size = std::filesystem::file_size(file_name);
+
+    const std::uintmax_t memory_limit_in_bytes = 100'000'000ull;    
+    UniqueWordsCounter uwc(file_name, memory_limit_in_bytes);
     std::cout << uwc.count() << std::endl;
+
     return 0;
 }
