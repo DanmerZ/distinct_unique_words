@@ -9,6 +9,8 @@
 class ThreadPool
 {
 public:
+    ~ThreadPool();
+
     std::uint64_t start();
     void enqueue_job(const std::function<void()>& job);
     void stop();
@@ -16,7 +18,7 @@ public:
 private:
     void loop();    
 
-    bool terminate_{ false };
+    bool stop_{ false };
     std::mutex mut_;
     std::condition_variable cv_;
     std::vector<std::thread> threads_;

@@ -15,14 +15,14 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     set(CMAKE_CXX_FLAGS "/W4 /wd4668 /EHsc")
 endif()
 
-add_executable(data_generator data_generator.cpp)
+add_executable(data_generator src/data_generator.cpp)
 add_executable(unique_words_counter 
-    main.cpp
-    unique_words_counter.h
-    unique_words_counter.cpp
-    threadpool.h
-    threadpool.cpp
-    thread_safe_hash_set.h
+    src/main.cpp
+    src/unique_words_counter.h
+    src/unique_words_counter.cpp
+    src/threadpool.h
+    src/threadpool.cpp
+    src/thread_safe_hash_set.h
 )
 # target_link_libraries(unique_words_counter /opt/homebrew/lib/libprofiler.dylib)
 

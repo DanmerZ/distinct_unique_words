@@ -1,5 +1,10 @@
 #include "threadpool.h"
 
+ThreadPool::~ThreadPool()
+{
+    stop();
+}
+
 std::uint64_t ThreadPool::start()
 {
     const auto number_of_threads = std::thread::hardware_concurrency();
@@ -24,7 +29,7 @@ void ThreadPool::stop()
 {
     {
         std::unique_lock<std::mutex> lk(mut_);
-        terminate_ = true;
+        stop_ = true;
     }
 
     cv_.notify_all();
@@ -45,10 +50,10 @@ void ThreadPool::loop()
         {
             std::unique_lock<std::mutex> lk(mut_);
             cv_.wait(lk, [this]() {
-                return terminate_ || !jobs_.empty();
+                return stop_ || !jobs_.empty();
             });
 
-            if (terminate_) {
+            if (stop_ && jobs_.empty()) {
                 return;
             }
 

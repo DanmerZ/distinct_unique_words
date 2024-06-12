@@ -48,7 +48,8 @@ std::uintmax_t UniqueWordsCounter::count()
         }
     }
 
-    tp.stop();
+    tp.stop(); // wait for threads to finish jobs
+
     return safe_set_.size() - 1;
 }
 
