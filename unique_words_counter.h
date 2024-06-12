@@ -26,7 +26,7 @@ private:
     const std::uintmax_t memory_limit_bytes_;
     
     ThreadSafeHashSet<std::string> safe_set_;
-    std::atomic_intmax_t current_buffer_size_ = 0;
+    std::atomic<std::uintmax_t> current_buffer_size_ = 0;
     std::mutex mut_;
     std::condition_variable cv_;
 };

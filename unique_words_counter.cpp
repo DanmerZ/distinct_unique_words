@@ -21,9 +21,9 @@ std::uintmax_t UniqueWordsCounter::count()
     
     std::ifstream ifs(file_name_);
 
-    for (auto i = 0u; i < block_indices.size() - 1; i++)
+    for (auto i = 0u; i < block_indices.size() - 1u; i++)
     {
-        const auto buffer_size = block_indices[i + 1] - block_indices[i];
+        const auto buffer_size = block_indices[i + 1u] - block_indices[i];
 
         {
             std::unique_lock<std::mutex> lk(mut_);
