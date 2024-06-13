@@ -62,3 +62,21 @@ Results are from the output of `performance_test.sh` (time measured in seconds).
 | `std::unordered_set` + "alphabet optimization" | 0.5   | 1.4  | 7.5  |
 | `boost::concurrent_flat_set`                   | 0.18  | 0.98 | 4.75 |
 
+## `pprof`
+
+```
+CPUPROFILE=prof.out ./unique_words_counter file_10000.txt
+
+
+Total: 591 samples
+     198  33.5%  33.5%      364  61.6% std::__1::getline[abi:ue170006]
+      83  14.0%  47.5%      514  87.0% UniqueWordsCounter::split_words_and_insert
+      50   8.5%  56.0%       50   8.5% 0x00000001834c4160
+      47   8.0%  64.0%       47   8.0% 0000000183433fe4
+      31   5.2%  69.2%       31   5.2% 0000000183433f5c
+      26   4.4%  73.6%       26   4.4% 0x00000001835331f8
+      23   3.9%  77.5%       23   3.9% UniqueWordsCounter::split_words_and_insert 
+      20   3.4%  80.9%       20   3.4% boost::unordered::detail::foa::rw_spinlock::lock_shared
+      18   3.0%  83.9%       18   3.0% 0x00000001834c4e78
+      17   2.9%  86.8%       17   2.9% 0000000183433fb0
+```
