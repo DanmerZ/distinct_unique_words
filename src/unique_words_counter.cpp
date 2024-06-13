@@ -1,5 +1,7 @@
 #include "unique_words_counter.h"
 
+#include "threadpool.h"
+
 UniqueWordsCounter::UniqueWordsCounter(const char* file_name, std::uintmax_t memory_limit_bytes) 
     : file_name_(file_name),
     memory_limit_bytes_(memory_limit_bytes)

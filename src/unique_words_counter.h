@@ -1,13 +1,16 @@
 #pragma once
 
 #include <atomic>
+#include <condition_variable>
 #include <iostream>
 #include <fstream>
 #include <filesystem>
+#include <mutex>
 #include <sstream>
+#include <string>
 #include <unordered_set>
+#include <vector>
 
-#include "threadpool.h"
 #include "thread_safe_hash_set.h"
 
 class UniqueWordsCounter
