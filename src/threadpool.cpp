@@ -5,7 +5,7 @@ ThreadPool::~ThreadPool() { stop(); }
 std::uint64_t ThreadPool::start() {
   const auto number_of_threads = std::thread::hardware_concurrency();
   for (auto i = 0u; i < number_of_threads; i++) {
-    threads_.emplace_back(std::thread{&ThreadPool::loop, this});
+    threads_.emplace_back(&ThreadPool::loop, this);
   }
 
   return number_of_threads;
@@ -13,7 +13,7 @@ std::uint64_t ThreadPool::start() {
 
 void ThreadPool::enqueue_job(const std::function<void()> &job) {
   {
-    std::unique_lock<std::mutex> lk(mut_);
+    std::unique_lock<std::mutex> lock(mut_);
     jobs_.push(job);
   }
   cv_.notify_one();

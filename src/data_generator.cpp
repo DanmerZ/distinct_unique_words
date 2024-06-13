@@ -1,3 +1,6 @@
+#include <algorithm>
+#include <cstdint>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -34,7 +37,7 @@ int generate_random_int(int low, int high) {
   return dist(rng);
 }
 
-int main([[maybe_unused]] int argc, [[maybe_unused]] char const *argv[]) {
+int main(int argc, char const *argv[]) {
   const std::size_t file_size_in_bytes =
       (argc == 3) ? std::stoul(argv[1]) : 1'000'000'000;
   const std::size_t max_unique_words_count =
@@ -77,7 +80,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char const *argv[]) {
       file << str;
     }
 
-    std::cout << "Unique words count: " << unique_words.size() << std::endl;
+    std::cout << "Unique words count: " << unique_words.size() << '\n';
   } // close file before renaming
 
   std::stringstream ss;

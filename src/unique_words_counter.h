@@ -2,13 +2,10 @@
 
 #include <atomic>
 #include <condition_variable>
-#include <filesystem>
-#include <fstream>
-#include <iostream>
+#include <cstddef>
+#include <cstdint>
 #include <mutex>
-#include <sstream>
 #include <string>
-#include <unordered_set>
 #include <vector>
 
 #include "thread_safe_hash_set.h"
@@ -23,8 +20,8 @@ public:
 
 private:
   std::vector<std::uintmax_t>
-  find_block_indices(const std::size_t block_size,
-                     const std::uintmax_t file_size) const;
+  find_block_indices(std::size_t block_size,
+                     std::uintmax_t file_size) const;
 
   void split_words_and_insert(const std::string &buffer);
 
