@@ -80,3 +80,9 @@ Total: 591 samples
       18   3.0%  83.9%       18   3.0% 0x00000001834c4e78
       17   2.9%  86.8%       17   2.9% 0000000183433fb0
 ```
+
+## Visual Studio profiler
+
+File: 5Gb, 100k unique words
+
+![alt 5Gb, 100k unique words](windows_5Gb_100k_words.PNG "File: 5Gb, 100k unique words")
