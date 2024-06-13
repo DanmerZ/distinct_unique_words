@@ -15,7 +15,7 @@ using ThreadSafeHashSet = boost::concurrent_flat_set<T>;
 #include <string>
 
 template<typename T>
-class MutexHashSet
+class ThreadSafeHashSet
 {
 public:
     void insert(const T& s)
@@ -35,11 +35,13 @@ private:
     std::unordered_set<T> set_;
 };
 
+#ifdef USE_ALPHABET_OPTIMIZATION
+
 template<>
-class MutexHashSet<std::string>
+class ThreadSafeHashSet<std::string>
 {
 public:
-    MutexHashSet()
+    ThreadSafeHashSet()
     {
         for (char c = 'a'; c <= 'z'; c++)
         {   
@@ -94,9 +96,7 @@ private:
     mutable std::mutex general_storage_mutex_;
     std::unordered_set<std::string> general_storage_;
 };
-
-template<typename T>
-using ThreadSafeHashSet = MutexHashSet<T>;
+#endif
 
 
 #endif
