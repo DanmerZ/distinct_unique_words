@@ -1,6 +1,6 @@
 #pragma once
 
-#ifdef BOOST_FOUND
+#ifdef USE_BOOST_HASH_SET
 
 #include <boost/unordered/concurrent_flat_set.hpp>
 

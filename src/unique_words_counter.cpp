@@ -42,7 +42,9 @@ std::uintmax_t UniqueWordsCounter::count()
             tp.enqueue_job(
                 [buf = std::move(buffer), this]() mutable {
                     const auto buf_size = buf.size();
-                    split_words_and_insert(std::move(buf));
+                    split_words_and_insert(buf);
+                    buf.clear();
+
                     current_buffer_size_ -= buf_size;
                     cv_.notify_one();
                 }
@@ -86,7 +88,7 @@ std::vector<std::uintmax_t> UniqueWordsCounter::find_block_indices(const std::si
     return v;
 }
 
-void UniqueWordsCounter::split_words_and_insert(std::string buffer)
+void UniqueWordsCounter::split_words_and_insert(const std::string& buffer)
 {
     std::stringstream ifs(buffer);
     std::string word;

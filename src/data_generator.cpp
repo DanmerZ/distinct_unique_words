@@ -53,7 +53,7 @@ int main([[maybe_unused]]int argc, [[maybe_unused]]char const *argv[])
 
     std::unordered_set<std::string> unique_words;
 
-    std::int64_t total_size = 0;
+    std::size_t total_size = 0;
 
     {
         std::ofstream file("tmp.txt");

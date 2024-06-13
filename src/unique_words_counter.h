@@ -23,7 +23,7 @@ public:
 private:
     std::vector<std::uintmax_t> find_block_indices(const std::size_t block_size, const std::uintmax_t file_size) const;
 
-    void split_words_and_insert(std::string buffer);
+    void split_words_and_insert(const std::string& buffer);
 
     const char* file_name_;
     const std::uintmax_t memory_limit_bytes_;

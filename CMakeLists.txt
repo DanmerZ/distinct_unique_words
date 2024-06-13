@@ -4,7 +4,7 @@ project(distinct_unique_words)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-set(Boost_DEBUG ON)
+set(USE_BOOST_HASH_SET OFF)
 find_package(Boost QUIET)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -26,7 +26,7 @@ add_executable(unique_words_counter
 )
 # target_link_libraries(unique_words_counter /opt/homebrew/lib/libprofiler.dylib)
 
-if(Boost_FOUND)
+if(USE_BOOST_HASH_SET AND Boost_FOUND)
     target_include_directories(unique_words_counter PUBLIC ${Boost_INCLUDE_DIR})
-    target_compile_definitions(unique_words_counter PUBLIC BOOST_FOUND)
+    target_compile_definitions(unique_words_counter PUBLIC USE_BOOST_HASH_SET)
 endif()
