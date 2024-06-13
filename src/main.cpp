@@ -29,7 +29,7 @@ int main([[maybe_unused]] int argc, char const *argv[]) {
 
   // trivial_solution(file_name);
 
-  const std::uintmax_t memory_limit_in_bytes = 100'000'000ull;
+  const std::uintmax_t memory_limit_in_bytes = 1'000'000'000ull;
   UniqueWordsCounter uwc(file_name, memory_limit_in_bytes);
   std::cout << uwc.count() << '\n';
 
